@@ -97,7 +97,7 @@ void scene::update(float t){
     update_particle(p);
     p.force += force_ext(p);
     p.time_step(t);
-    //std::cout <<  i << ": " << p.position.x << ", " << p.position.y << std::endl;
+    //std::cout <<  i << ": " << p.velocity.x << ", " << p.velocity.y << std::endl;
   }
 
 }
@@ -122,8 +122,8 @@ vec2f scene::force_ext(particle& P){
   vec2f sum_forces = gravity;
   float x = position.x;
   float y = position.y;
-  if(abs(x) > width){ P.velocity.x = -x; }
-  if(abs(y) > height){ P.velocity.y = -y; }
+  if(abs(x) > width){ P.velocity.x = -P.velocity.x; }
+  if(abs(y) > height){ P.velocity.y = -P.velocity.y; }
   return sum_forces;
 }
 

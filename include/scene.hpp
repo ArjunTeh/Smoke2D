@@ -10,7 +10,7 @@
 
 class scene {
   static constexpr float FPS = 60.0;
-  static constexpr int max_particles = 300;
+  static constexpr int max_particles = 1;
   GLFWwindow* window;
 
   GLuint vbo, vao;
@@ -26,7 +26,7 @@ class scene {
   std::vector<GLfloat> vertices;
 public:
 
-  scene(void) : width(20), height(20), should_run(true), gravity(0, -0.1) {}
+  scene(void) : width(20), height(20), should_run(true), gravity(0, -3.0) {}
 
   //window stuff goes here
   //smoke starts in the center
