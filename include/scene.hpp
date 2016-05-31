@@ -9,8 +9,16 @@
 #include "simulation_units.hpp"
 
 class scene {
+  //DEBUG STUFF
+  bool should_abort;
+
+  //ACTUAL STUFF
   static constexpr float FPS = 60.0;
-  static constexpr int max_particles = 1;
+  static constexpr float time_step = (1/FPS);
+  static constexpr int max_particles = 5;
+  static constexpr float motion_damping = 0.3;
+  static constexpr float penalty_force = 10.0;
+
   GLFWwindow* window;
 
   GLuint vbo, vao;
@@ -26,15 +34,18 @@ class scene {
   std::vector<GLfloat> vertices;
 public:
 
-  scene(void) : width(20), height(20), should_run(true), gravity(0, -3.0) {}
+  scene(void) : width(10), height(10), should_run(true), gravity(0, -9.8) {}
 
   //window stuff goes here
   //smoke starts in the center
   void init();
   void teardown();
   void update(float t);
-  void update_particle(particle& P);
+  void update_particle_density(particle& P);
+  void update_particle_pressure(particle& P);
+  void update_particle_acceleration(particle& P);
   vec2f force_ext(particle& P);
+  vec2f force_damping(particle& P);
   void draw();
   void run();
 

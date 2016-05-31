@@ -10,7 +10,7 @@ const GLchar* vertexSource =
   "in vec2 position;"
   "void main()"
   "{"
-  "    vec2 screen_pos = (position)/20.0;"
+  "    vec2 screen_pos = (position)/10.0;"
   "    gl_Position = vec4(screen_pos, 0.0, 1.0);"
   "}";
 const GLchar* fragmentSource =
@@ -94,37 +94,82 @@ void scene::update(float t){
   for(int i = 0; i < size; ++i){
     //update each particle
     particle& p = particles[i];
-    update_particle(p);
-    p.force += force_ext(p);
+    update_particle_density(p);
+    //update_particle_pressure(p);
+    update_particle_acceleration(p);
     p.time_step(t);
     //std::cout <<  i << ": " << p.velocity.x << ", " << p.velocity.y << std::endl;
   }
 
 }
 
-void scene::update_particle(particle& P){
+void scene::update_particle_density(particle& P){
+  uint64_t size = particles.size();
+  float new_density = 0.0; //minimum density? is this valid?
+  for(uint64_t i = 0; i < size; ++i){
+    particle const& b = particles[i];
+    new_density += P.density_from(&b);
+  }
+
+  P.density = new_density;
+  std::cout << P.density << std::endl;
+  //  if(P.density <= 0){ should_abort = true; }
+}
+
+void scene::update_particle_pressure(particle& P){
+  uint64_t size = particles.size();
+  float new_pressure = 0;
+  for(uint64_t i = 0; i < size; ++i){
+    particle const& b = particles[i];
+    new_pressure += P.pressure_from(&b);
+  }
+
+  P.pressure = new_pressure;
+}
+
+void scene::update_particle_acceleration(particle& P){
   //get list of neighbors
   //calculate current density
   //calculate current pressure
   //calculate acceleration
   uint64_t size = particles.size();
+  vec2f pressure_gradient{0,0};
   for(uint64_t i = 0; i < size; ++i){
-    //    P.kernel_function(&particles[i]);
+    vec2f press = P.acceleration_from(&particles[i]);
+    if( press.x = press.x ){
+      pressure_gradient += press;
+      //std::cout << P.position << P.velocity << P.force << std::endl;
+    }
+
   }
 
-  P.force = vec2f{ 0, 0 };
-
+  P.force = pressure_gradient;
+  P.force += force_ext(P);
+  P.force += force_damping(P);
 }
 
 vec2f scene::force_ext(particle& P){
   //if there are other things in the way then add those forces,
   vec2f const& position = P.position;
   vec2f sum_forces = gravity;
-  float x = position.x;
-  float y = position.y;
-  if(abs(x) > width){ P.velocity.x = -P.velocity.x; }
-  if(abs(y) > height){ P.velocity.y = -P.velocity.y; }
+  float x = P.velocity.x;
+  float y = P.velocity.y;
+  if( abs(position.x) > width ){
+    sum_forces.x += -position.x * penalty_force;
+  } else if( abs(x*time_step + position.x) > width ){
+    P.velocity.x = -x;
+  }
+
+  if( abs(position.y) > height ){
+    sum_forces.y += -position.y * penalty_force;
+  } else if( abs(y*time_step + position.y) > height){
+    P.velocity.y = -y;
+  }
   return sum_forces;
+}
+
+vec2f scene::force_damping(particle& P){
+  return -motion_damping * P.velocity;
 }
 
 
@@ -168,21 +213,24 @@ void scene::teardown(){
 
 void scene::run(void){
   int step_num = 0;
+  should_abort = false;
   auto t_prev = std::chrono::high_resolution_clock::now();
   //add_particle(-1, 0);
 
-  while(!glfwWindowShouldClose(window)) {
+  while(!glfwWindowShouldClose(window) && !should_abort) {
     auto t_now = std::chrono::high_resolution_clock::now();
 
 
     float t_delta = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_prev).count();
     if( t_delta > float(1/FPS)){
 
-      if(particles.size() < max_particles){
-        add_particle(0.5f, 0.5f);
+      if(particles.size() < max_particles && step_num%4 == 0){
+        vec2f pos{ -5.0f, 0.5f };
+        vec2f vel{ 2.0f, 0.0f };
+        add_particle(pos, vel);
       }
 
-      update(0.0166);
+      update(time_step);
       ++step_num;
       t_prev = t_now;
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -193,6 +241,9 @@ void scene::run(void){
     glfwSwapBuffers(window);
     glfwPollEvents();
     //if( step_num > 10 ){ break; }
+    if(should_abort){
+      std::cout << "frame: " << step_num << std::endl;
+    }
   }
 
 }

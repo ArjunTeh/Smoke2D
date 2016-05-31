@@ -71,7 +71,7 @@ inline vec2<T> operator/ (vec2<T> const& lhs, T const& rhs){
 
 template<typename T>
 std::ostream& operator<< ( std::ostream& out, vec2<T> v ){
-  out << v.x << ", " << v.y;
+  out << "{" << v.x << ", " << v.y << "}";
   return out;
 }
 
