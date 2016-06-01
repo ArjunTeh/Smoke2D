@@ -1,86 +1,74 @@
 #pragma once
 
 #include <vector>
+#include <list>
+#include <stdexcept>
 
 #include "vec.hpp"
 
 //Obj will most likely be particle exclusively (lol)
-namespace Bucket{
 
-  template<typename T>
-  struct bucket_item{
-    T* data;
-    bucket_item<T>* next;
-  };
-
-  template<typename Obj>
-  struct bucket{
-    bucket_item<Obj> head;
-    bucket_item<Obj> tail;
-    bucket<Obj>* next;
-
-    struct iterator : public std::forward_iterator_tag {
-      bucket<Obj>* current_bucket;
-      bucket_item<Obj>* current_item;
-
-      Obj* operator*(void){
-        return current_bucket->data;
-      }
-
-      void operator++(void){
-        current_item = current_item->next;
-        if(!current_item){
-          current_bucket = current_bucket->next;
-          if(current_bucket){
-            current_item = current_bucket->head;
-          }
-        }
-      }
-
-      bool operator==(bucket<Obj>::iterator* rhs){
-        return current_item == rhs.current_item && current_bucket == rhs.current_bucket;
-      }
-
-      bool operator!=(bucket<Obj>::iterator* rhs){
-        return !( (*this) == (*rhs) );
-      }
-    };
-  };
-
-
-};
-
-using namespace Bucket;
+using namespace std;
 
 template<typename Obj>
 class spatial_hash{
   float cell_size; //we shall do squares for now
   int width, height;
-  std::vector<bucket<Obj>> grid;
+  vector< list<Obj*> > grid;
 public:
 
-  spatial_hash(int width, int height, float h) : grid(width*height), cell_size(h) {}
+  spatial_hash(float w, float h, float s) : grid(int(width*height/s + 1)), cell_size(s), width(w), height(h) {}
 
   void update_position(Obj* p, vec2f old_pos){
-    vec2f const& pos = p->position;
+    vec2f const& new_pos = p->position;
     int old_index = shash(old_pos);
-    int new_index = shash(pos);
+    int new_index = shash(new_pos);
 
-    bucket<Obj>& old_bucket = grid[old_index];
-    bucket<Obj>& new_bucket = grid[new_index];
+    list<Obj*>& old_bucket = grid[old_index];
+    bool exists = false;
+    for(auto i = old_bucket.begin(); i != old_bucket.end(); ++i){
+      if((*i) == p){
+        old_bucket.erase(i);
+        exists = true;
+        break;//we've modified the list, we invalidated the iterator
+      }
+    }
+    if( !exists ) { throw std::invalid_argument("object doesn't exist in grid already"); }
+
+    list<Obj*>& new_bucket = grid[new_index];
+    new_bucket.push_back(p);
   }
 
-  typename bucket<Obj>::iterator get_adjacent(Obj* p){
+  list<Obj*>& get_adjacent(Obj& p){
+    for(int r = -1; r < 2; ++r){
+      for(int c = -1; c < 2; ++c){
+        int index = r * 2 * width + c;
+      }
+    }
     //return an appaend? of lists?
     //should be a linked list
   }
 
   void add_particle(Obj* p){
+    int index = shash(p->position);
+    list<Obj*>& bucket = grid[index];
+    bucket.push_back(p);
     //should not add if already exists?
   }
 
   void remove_particle(Obj* p){
     //what happens when it doesn't exist?
+    int index = shash(p->position);
+    list<Obj*>& bucket = grid[index];
+    bool exists = false;
+    for(auto i = bucket.begin(); i != bucket.end(); ++i){
+      if((*i) == p){
+        bucket.erase(i);
+        exists = true;
+        break;//we've modified the list, we invalidated the iterator
+      }
+    }
+    if( !exists ) { throw std::invalid_argument("object doesn't exist in grid already"); }
   }
 
 private:
