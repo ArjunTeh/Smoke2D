@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "vec.hpp"
+#include "spatial_hash.hpp"
 #include "simulation_units.hpp"
 
 class scene {
@@ -18,6 +19,7 @@ class scene {
   static constexpr int max_particles = 5;
   static constexpr float motion_damping = 0.3;
   static constexpr float penalty_force = 10.0;
+  static constexpr float grid_block_size = 0.5;
 
   GLFWwindow* window;
 
@@ -32,9 +34,10 @@ class scene {
   //paper says to use a linked list
   std::vector<particle> particles;
   std::vector<GLfloat> vertices;
+  spatial_hash<particle> grid;
 public:
 
-  scene(void) : width(10), height(10), should_run(true), gravity(0, -9.8) {}
+  scene(void) : width(10), height(10), should_run(true), gravity(0, -9.8), grid(width, height, grid_block_size) {}
 
   //window stuff goes here
   //smoke starts in the center
