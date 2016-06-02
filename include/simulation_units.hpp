@@ -78,6 +78,7 @@ public:
   }
 
   particle( vec2f pos, vec2f vel ) : position(pos), velocity(vel), mass(1.0) {}
+  particle(void) = default;
 
   //semi-implicit Euler
   void time_step(float delta){

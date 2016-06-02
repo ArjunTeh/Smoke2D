@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
+#include <unordered_map>
 #include <list>
 #include <stdexcept>
+#include <iostream>
 
 #include "vec.hpp"
 
@@ -14,12 +15,15 @@ template<typename Obj>
 class spatial_hash{
   float cell_size; //we shall do squares for now
   int width, height;
-  vector< list<Obj*> > grid;
+  int num_objects;
+  unordered_map<int, list<Obj*> > grid;
 public:
 
-  spatial_hash(float w, float h, float s) : grid(int(width*height/s + 1)), cell_size(s), width(w), height(h) {}
+  spatial_hash(float w, float h, float s) : grid(int(4*width*height/(s*s) + 1)), cell_size(s),
+                                            width(w), height(h),
+                                            num_objects(0) {}
 
-  void update_position(Obj* p, vec2f old_pos){
+  void update_position(Obj* p, vec2f& old_pos){
     vec2f const& new_pos = p->position;
     int old_index = shash(old_pos);
     int new_index = shash(new_pos);
@@ -39,24 +43,32 @@ public:
     new_bucket.push_back(p);
   }
 
-  list<Obj*>& get_adjacent(Obj& p){
+  void get_adjacent(Obj& p, list<Obj*>& toreturn){
+
+    int obj_index = shash(p.position);
     for(int r = -1; r < 2; ++r){
       for(int c = -1; c < 2; ++c){
-        int index = r * 2 * width + c;
+        if(r < 0 || r >= height || c < 0 || c >= width){ continue; }
+        int index = obj_index + r * 2 * width + c;
+        list<Obj*>& bucket = grid[index];
+        toreturn.insert(toreturn.end(), bucket.begin(), bucket.end());
+        //std::cout << "indexing at " << index << std::endl;
       }
     }
-    //return an appaend? of lists?
+    //return an append? of lists?
     //should be a linked list
   }
 
   void add_particle(Obj* p){
     int index = shash(p->position);
+
     list<Obj*>& bucket = grid[index];
     bucket.push_back(p);
+    ++num_objects;
     //should not add if already exists?
   }
 
-  void remove_particle(Obj* p){
+  Obj* remove_particle(Obj* p){
     //what happens when it doesn't exist?
     int index = shash(p->position);
     list<Obj*>& bucket = grid[index];
@@ -69,7 +81,11 @@ public:
       }
     }
     if( !exists ) { throw std::invalid_argument("object doesn't exist in grid already"); }
+    --num_objects;
+    return p;
   }
+
+  int size(void){ return num_objects; }
 
 private:
 
@@ -77,9 +93,9 @@ private:
   int shash(vec2f const& pos){
     float x = pos.x;
     float y = pos.y;
-    float index =  floor((x+width) / cell_size);
+    int index =  floor((x+width) / cell_size);
     index +=  floor((y+height) / cell_size) * width * 2;//2 because width is half
-    return int( index );
+    return index;
   }
 
   //this spatial hash will need to be able to return a list of all surrounding neighbors

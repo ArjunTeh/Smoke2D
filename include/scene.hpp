@@ -16,10 +16,11 @@ class scene {
   //ACTUAL STUFF
   static constexpr float FPS = 60.0;
   static constexpr float time_step = (1/FPS);
-  static constexpr int max_particles = 5;
+  static constexpr int max_particles = 10;
   static constexpr float motion_damping = 0.3;
   static constexpr float penalty_force = 10.0;
-  static constexpr float grid_block_size = 0.5;
+  static constexpr float grid_block_size = 0.25;
+  static constexpr float scene_size = 5.0;
 
   GLFWwindow* window;
 
@@ -28,24 +29,26 @@ class scene {
   GLuint unicolor;
   bool should_run;
   float width, height;
+  float *density_buffer, *pressure_buffer;
 
   vec2f gravity;
 
   //paper says to use a linked list
-  std::vector<particle> particles;
+  std::list<particle> particles = list<particle>();
   std::vector<GLfloat> vertices;
   spatial_hash<particle> grid;
 public:
 
-  scene(void) : width(10), height(10), should_run(true), gravity(0, -9.8), grid(width, height, grid_block_size) {}
+  scene(void) : width(scene_size), height(scene_size), should_run(true), gravity(0, -9.8),
+                grid(width, height, grid_block_size) { }
 
   //window stuff goes here
   //smoke starts in the center
   void init();
   void teardown();
   void update(float t);
-  void update_particle_density(particle& P);
-  void update_particle_pressure(particle& P);
+  float calculate_particle_density(particle& P);
+  float calculate_particle_pressure(particle& P);
   void update_particle_acceleration(particle& P);
   vec2f force_ext(particle& P);
   vec2f force_damping(particle& P);

@@ -87,44 +87,67 @@ void scene::init(void){
 
   // Get the location of the color uniform
   unicolor = glGetUniformLocation(shader_program, "color");
+
+  //Finished OpenGL initialization
+
+  density_buffer = new float[max_particles];
+  pressure_buffer = new float[max_particles];
 }
 
 void scene::update(float t){
-  uint64_t size = particles.size();
-  for(int i = 0; i < size; ++i){
+  int index = 0;
+  for(auto i = particles.begin(); i != particles.end(); ++i){
     //update each particle
-    particle& p = particles[i];
-    update_particle_density(p);
-    //update_particle_pressure(p);
-    update_particle_acceleration(p);
-    p.time_step(t);
-    //std::cout <<  i << ": " << p.velocity.x << ", " << p.velocity.y << std::endl;
+    particle& p = *i;
+    density_buffer[index] = calculate_particle_density(p);
+    pressure_buffer[index] = calculate_particle_pressure(p);
+    ++index;
+  }
+
+  index = 0;
+  for(auto i = particles.begin(); i != particles.end(); ++i){
+    (*i).density = density_buffer[index];
+    (*i).pressure = pressure_buffer[index];
+    ++index;
+  }
+
+  for(auto i = particles.begin(); i != particles.end(); ++i){
+    particle* p = &(*i);
+    vec2f old_pos = p->position;
+    //std::cout <<  i << ": " << p->position.x << ", " << p->position.y << std::endl;
+    update_particle_acceleration(*p);
+    p->time_step(t);
+    grid.update_position(p, old_pos);
   }
 
 }
 
-void scene::update_particle_density(particle& P){
-  uint64_t size = particles.size();
+float scene::calculate_particle_density(particle& P){
+  list<particle*> adjacents;
+  grid.get_adjacent(P, adjacents);
   float new_density = 0.0; //minimum density? is this valid?
-  for(uint64_t i = 0; i < size; ++i){
-    particle const& b = particles[i];
-    new_density += P.density_from(&b);
+
+  for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
+    particle const* b = (*i);
+    new_density += P.density_from(b);
   }
 
-  P.density = new_density;
-  std::cout << P.density << std::endl;
-  //  if(P.density <= 0){ should_abort = true; }
+  //std::cout << new_density << " " << adjacents.size() << std::endl;
+  return new_density;
 }
 
-void scene::update_particle_pressure(particle& P){
-  uint64_t size = particles.size();
-  float new_pressure = 0;
-  for(uint64_t i = 0; i < size; ++i){
-    particle const& b = particles[i];
-    new_pressure += P.pressure_from(&b);
+float scene::calculate_particle_pressure(particle& P){
+  list<particle*> adjacents;
+  grid.get_adjacent(P, adjacents);
+  float new_pressure = 0.0; //minimum density? is this valid?
+
+  for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
+    particle const* b = (*i);
+    new_pressure += P.pressure_from(b);
   }
 
-  P.pressure = new_pressure;
+  std::cout << new_pressure << " " << adjacents.size() << std::endl;
+  return new_pressure;
 }
 
 void scene::update_particle_acceleration(particle& P){
@@ -132,15 +155,12 @@ void scene::update_particle_acceleration(particle& P){
   //calculate current density
   //calculate current pressure
   //calculate acceleration
-  uint64_t size = particles.size();
+  list<particle*> adjacents;
+  grid.get_adjacent(P, adjacents);
   vec2f pressure_gradient{0,0};
-  for(uint64_t i = 0; i < size; ++i){
-    vec2f press = P.acceleration_from(&particles[i]);
-    if( press.x = press.x ){
-      pressure_gradient += press;
-      //std::cout << P.position << P.velocity << P.force << std::endl;
-    }
-
+  for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
+    vec2f press = P.acceleration_from(*i);
+    pressure_gradient += press;
   }
 
   P.force = pressure_gradient;
@@ -224,7 +244,7 @@ void scene::run(void){
     float t_delta = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_prev).count();
     if( t_delta > float(1/FPS)){
 
-      if(particles.size() < max_particles && step_num%4 == 0){
+      if(particles.size() < max_particles && step_num%1 == 0){
         vec2f pos{ -5.0f, 0.5f };
         vec2f vel{ 2.0f, 0.0f };
         add_particle(pos, vel);
@@ -240,7 +260,7 @@ void scene::run(void){
 
     glfwSwapBuffers(window);
     glfwPollEvents();
-    //if( step_num > 10 ){ break; }
+    //if( step_num > 50 ){ break; }
     if(should_abort){
       std::cout << "frame: " << step_num << std::endl;
     }
@@ -251,6 +271,7 @@ void scene::run(void){
 void scene::add_particle(vec2f pos, vec2f vel){
   particle p{ pos, vel };
   particles.push_back(p);
+  grid.add_particle(&particles.back());
 }
 
 void scene::add_particle( float x, float y ){
