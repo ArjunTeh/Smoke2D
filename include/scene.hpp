@@ -15,11 +15,11 @@ class scene {
 
   //ACTUAL STUFF
   static constexpr float FPS = 60.0;
-  static constexpr float time_step = (1/FPS);
-  static constexpr int max_particles = 10;
+  static constexpr float time_step = 0.004;
+  static constexpr int max_particles = 100;
   static constexpr float motion_damping = 0.3;
-  static constexpr float penalty_force = 10.0;
-  static constexpr float grid_block_size = 0.25;
+  static constexpr float penalty_force = 100.0;
+  static constexpr float grid_block_size = 1.0;
   static constexpr float scene_size = 5.0;
 
   GLFWwindow* window;

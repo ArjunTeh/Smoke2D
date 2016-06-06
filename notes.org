@@ -1,0 +1,5 @@
+* TODO 
+  Particles are getting stuck together - decide whether or not the pressure should be negative or positive
+
+* Notes about the simulation
+  per grid, there should generally be only one particle per grid at the rest state

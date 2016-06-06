@@ -8,11 +8,13 @@ class particle {
 public:
   static constexpr float sphere_of_influence = 0.5;//2 units of influence
   static constexpr float diff_const = 0.001; //definitely can be smaller
+  static constexpr float target_density = 0.3;
+  static constexpr float pressure_stiffness = 50;
 
   vec2f position;
   vec2f velocity;
   vec2f force;
-  float mass = 0.4;
+  float mass = 0.2;
   float pressure = 1.0;
   float density = 0.3;
 
@@ -24,7 +26,9 @@ public:
     if( q > 2 ) { return 0.0f; }
     float work = (2 - q) * (2 - q) * (2 - q);
     if(q > 1) { return work; }
-    work -= 4* pow( (1-q) , 3 );
+    work -= 4 * pow( (1-q) , 3 );
+
+    //float work = pow( (1-q), 3 );
 
     return work;
   };
@@ -75,6 +79,10 @@ public:
   float pressure_from( particle const* p){
     if( !p || p == this ) { return 0.0f; }
     return p->mass * kernel_function(p->position) * p->pressure / p->density;
+  }
+
+  float update_pressure(void){
+    return pressure_stiffness * ( density - target_density );
   }
 
   particle( vec2f pos, vec2f vel ) : position(pos), velocity(vel), mass(1.0) {}

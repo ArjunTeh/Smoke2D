@@ -137,6 +137,7 @@ float scene::calculate_particle_density(particle& P){
 }
 
 float scene::calculate_particle_pressure(particle& P){
+  /*
   list<particle*> adjacents;
   grid.get_adjacent(P, adjacents);
   float new_pressure = 0.0; //minimum density? is this valid?
@@ -148,6 +149,9 @@ float scene::calculate_particle_pressure(particle& P){
 
   std::cout << new_pressure << " " << adjacents.size() << std::endl;
   return new_pressure;
+  */
+
+  return P.update_pressure();
 }
 
 void scene::update_particle_acceleration(particle& P){
@@ -164,8 +168,9 @@ void scene::update_particle_acceleration(particle& P){
   }
 
   P.force = pressure_gradient;
-  P.force += force_ext(P);
   P.force += force_damping(P);
+  P.force += force_ext(P);
+
 }
 
 vec2f scene::force_ext(particle& P){
@@ -175,13 +180,14 @@ vec2f scene::force_ext(particle& P){
   float x = P.velocity.x;
   float y = P.velocity.y;
   if( abs(position.x) > width ){
-    sum_forces.x += -position.x * penalty_force;
+    sum_forces.x += (-position.x / abs(position.x)) * (abs(position.x) - width) * penalty_force;
   } else if( abs(x*time_step + position.x) > width ){
     P.velocity.x = -x;
   }
 
   if( abs(position.y) > height ){
-    sum_forces.y += -position.y * penalty_force;
+    //sum_forces.y += -position.y * penalty_force;
+    sum_forces.y += (-position.y / abs(position.y)) * (abs(position.y) - width) * penalty_force;
   } else if( abs(y*time_step + position.y) > height){
     P.velocity.y = -y;
   }
