@@ -92,6 +92,7 @@ void scene::init(void){
 
   density_buffer = new float[max_particles];
   pressure_buffer = new float[max_particles];
+  mass_buffer = new float[max_particles];
 }
 
 void scene::update(float t){
@@ -101,6 +102,7 @@ void scene::update(float t){
     particle& p = *i;
     density_buffer[index] = calculate_particle_density(p);
     pressure_buffer[index] = calculate_particle_pressure(p);
+    mass_buffer[index] = calculate_particle_mass(p);
     ++index;
   }
 
@@ -125,7 +127,7 @@ void scene::update(float t){
 float scene::calculate_particle_density(particle& P){
   list<particle*> adjacents;
   grid.get_adjacent(P, adjacents);
-  float new_density = 0.0; //minimum density? is this valid?
+  float new_density = 0.0;
 
   for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
     particle const* b = (*i);
@@ -134,6 +136,20 @@ float scene::calculate_particle_density(particle& P){
 
   //std::cout << new_density << " " << adjacents.size() << std::endl;
   return new_density;
+}
+
+float scene::calculate_particle_mass(particle& P){
+  list<particle*> adjacents;
+  grid.get_adjacent(P, adjacents);
+  float new_mass = 0.0;
+
+  for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
+    particle const* b = (*i);
+    new_mass += P.mass_from(b);
+  }
+
+  //std::cout << new_mass << " " << adjacents.size() << std::endl;
+  return new_mass;
 }
 
 float scene::calculate_particle_pressure(particle& P){
@@ -150,8 +166,9 @@ float scene::calculate_particle_pressure(particle& P){
   std::cout << new_pressure << " " << adjacents.size() << std::endl;
   return new_pressure;
   */
-
-  return P.update_pressure();
+  float toreturn = P.update_pressure();
+  //std::cout << toreturn << std::endl;
+  return toreturn;
 }
 
 void scene::update_particle_acceleration(particle& P){
@@ -167,7 +184,10 @@ void scene::update_particle_acceleration(particle& P){
     pressure_gradient += press;
   }
 
-  P.force = pressure_gradient;
+  std::cout << "list size: " << adjacents.size() << std::endl;
+  //std::cout << pressure_gradient << std::endl;
+
+  P.force = pressure_gradient * P.density;
   P.force += force_damping(P);
   P.force += force_ext(P);
 
@@ -235,13 +255,24 @@ void scene::teardown(){
   glDeleteVertexArrays(1, &vao);
   //delete window
   glfwTerminate();
+
 }
 
 void scene::run(void){
   int step_num = 0;
   should_abort = false;
   auto t_prev = std::chrono::high_resolution_clock::now();
+
+  //generate some particles before running
   //add_particle(-1, 0);
+  int resolution = 4;
+  for( int i = -resolution; i < resolution - 1; ++i ){
+    for( int j = -resolution; j < resolution - 1; ++j){
+      float x = (i+1) * (width)/(resolution*2);
+      float y = (j+1) * (height)/(resolution*2);
+      add_particle(x,y);
+    }
+  }
 
   while(!glfwWindowShouldClose(window) && !should_abort) {
     auto t_now = std::chrono::high_resolution_clock::now();
@@ -250,9 +281,11 @@ void scene::run(void){
     float t_delta = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_prev).count();
     if( t_delta > float(1/FPS)){
 
-      if(particles.size() < max_particles && step_num%1 == 0){
-        vec2f pos{ -5.0f, 0.5f };
-        vec2f vel{ 2.0f, 0.0f };
+      //emit particles during sim
+      if(false && particles.size() < max_particles && step_num%1 == 0){
+        float x_pos = (float) step_num * 0.1;
+        vec2f pos{ x_pos, 1.0f };
+        vec2f vel{ 0.0f, 0.0f };
         add_particle(pos, vel);
       }
 

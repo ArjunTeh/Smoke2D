@@ -16,10 +16,10 @@ class scene {
   //ACTUAL STUFF
   static constexpr float FPS = 60.0;
   static constexpr float time_step = 0.004;
-  static constexpr int max_particles = 100;
+  static constexpr int max_particles = 500;
   static constexpr float motion_damping = 0.3;
   static constexpr float penalty_force = 100.0;
-  static constexpr float grid_block_size = 1.0;
+  static constexpr float grid_block_size = 10.0;
   static constexpr float scene_size = 5.0;
 
   GLFWwindow* window;
@@ -29,12 +29,12 @@ class scene {
   GLuint unicolor;
   bool should_run;
   float width, height;
-  float *density_buffer, *pressure_buffer;
+  float *density_buffer, *pressure_buffer, *mass_buffer;
 
   vec2f gravity;
 
   //paper says to use a linked list
-  std::list<particle> particles = list<particle>();
+  std::list<particle> particles;
   std::vector<GLfloat> vertices;
   spatial_hash<particle> grid;
 public:
@@ -49,6 +49,7 @@ public:
   void update(float t);
   float calculate_particle_density(particle& P);
   float calculate_particle_pressure(particle& P);
+  float calculate_particle_mass(particle& P);
   void update_particle_acceleration(particle& P);
   vec2f force_ext(particle& P);
   vec2f force_damping(particle& P);

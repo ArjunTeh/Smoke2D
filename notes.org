@@ -3,3 +3,16 @@
 
 * Notes about the simulation
   per grid, there should generally be only one particle per grid at the rest state
+  they should be pushing away from each other, so why do they clump?
+
+** Clustering
+   Clumping is a common bug that most people have, that has to do with the choice of kernel, the piecewise function should deal with it
+   Clustering is also solved by having two kernel functions that are used, with one being the near case?
+
+** Data structure
+   Currently the hash being used right now doesn't correctly index the grid space to get the correct spaces
+
+** Adding energy  
+   Right now, for some reason, energy is being added into the system per collision?
+   Perhaps that has to do with the pressure equation?
+   recalculating mass probably needs to happen as well

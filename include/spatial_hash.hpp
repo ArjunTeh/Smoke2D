@@ -48,7 +48,9 @@ public:
     int obj_index = shash(p.position);
     for(int r = -1; r < 2; ++r){
       for(int c = -1; c < 2; ++c){
-        if(r < 0 || r >= height || c < 0 || c >= width){ continue; }
+        int r_index = r + obj_index;
+        int c_index = c + obj_index;
+        if((r_index) < 0 || r_index >= height || c_index < 0 || c_index >= width){ continue; }
         int index = obj_index + r * 2 * width + c;
         list<Obj*>& bucket = grid[index];
         toreturn.insert(toreturn.end(), bucket.begin(), bucket.end());

@@ -36,6 +36,10 @@ public:
   T length(void){
     return sqrt(x*x + y*y);
   }
+
+  vec2<T> normalize(void){
+    return (*this)/(this->length());
+  }
 };
 
 template<typename T>
