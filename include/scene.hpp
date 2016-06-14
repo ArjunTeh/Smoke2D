@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 
+#include "constants.hpp"
 #include "vec.hpp"
 #include "spatial_hash.hpp"
 #include "simulation_units.hpp"
@@ -15,11 +16,11 @@ class scene {
 
   //ACTUAL STUFF
   static constexpr float FPS = 60.0;
-  static constexpr float time_step = 0.004;
+  static constexpr float time_step = 0.002;
   static constexpr int max_particles = 500;
-  static constexpr float motion_damping = 0.3;
+  static constexpr float motion_damping = 0.1;
   static constexpr float penalty_force = 100.0;
-  static constexpr float grid_block_size = 10.0;
+  static constexpr float grid_block_size = 100; //Constants::h_val;
   static constexpr float scene_size = 5.0;
 
   GLFWwindow* window;
@@ -29,9 +30,9 @@ class scene {
   GLuint unicolor;
   bool should_run;
   float width, height;
-  float *density_buffer, *pressure_buffer, *mass_buffer;
+  float *density_buffer, *pressure_buffer;
 
-  vec2f gravity;
+  vec2f gravity = Constants::gravity;
 
   //paper says to use a linked list
   std::list<particle> particles;
@@ -39,8 +40,8 @@ class scene {
   spatial_hash<particle> grid;
 public:
 
-  scene(void) : width(scene_size), height(scene_size), should_run(true), gravity(0, -9.8),
-                grid(width, height, grid_block_size) { }
+  scene(void) : width(scene_size), height(scene_size), should_run(true),
+                grid(scene_size, scene_size, grid_block_size) { }
 
   //window stuff goes here
   //smoke starts in the center
@@ -53,6 +54,7 @@ public:
   void update_particle_acceleration(particle& P);
   vec2f force_ext(particle& P);
   vec2f force_damping(particle& P);
+  vec2f viscosity_damping(particle& P);
   void draw();
   void run();
 

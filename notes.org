@@ -16,3 +16,9 @@
    Right now, for some reason, energy is being added into the system per collision?
    Perhaps that has to do with the pressure equation?
    recalculating mass probably needs to happen as well
+** Constant Mass
+   In order for mass to be conserved in the simulation, we don't mess with the mass of each particle
+** Viscosity should be added
+
+** Influence circle
+   there seems to be a problem with particles being affected by particles to the side of it

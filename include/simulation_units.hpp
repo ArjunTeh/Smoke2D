@@ -2,11 +2,13 @@
 
 #include <iostream>
 
+#include "constants.hpp"
 #include "vec.hpp"
+
 
 class particle {
 public:
-  static constexpr float sphere_of_influence = 0.2;//2 units of influence
+  static constexpr float sphere_of_influence = Constants::h_val;//2 units of influence
   static constexpr float diff_const = 0.0001; //definitely can be smaller
   static constexpr float target_density = 0.03;
   static constexpr float pressure_stiffness = 20;
@@ -14,7 +16,7 @@ public:
   vec2f position;
   vec2f velocity;
   vec2f force;
-  float mass = 1.0;
+  float mass = 0.5;
   float pressure = 1.0;
   float density = 0.3;
 
@@ -37,8 +39,9 @@ public:
   };
 
   float kernel_function2( vec2f const p ) const{
-    float q = (position -p).length();
+    float q = (position - p).length();
     q /= sphere_of_influence;
+    if( q > 1 ) { return 0; }
     float a = 1 + 3*q;
     float b = 1- q;
 

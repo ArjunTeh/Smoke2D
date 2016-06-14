@@ -92,27 +92,41 @@ void scene::init(void){
 
   density_buffer = new float[max_particles];
   pressure_buffer = new float[max_particles];
-  mass_buffer = new float[max_particles];
+
 }
 
 void scene::update(float t){
+  //update density
   int index = 0;
   for(auto i = particles.begin(); i != particles.end(); ++i){
     //update each particle
     particle& p = *i;
     density_buffer[index] = calculate_particle_density(p);
-    pressure_buffer[index] = calculate_particle_pressure(p);
-    mass_buffer[index] = calculate_particle_mass(p);
     ++index;
   }
 
   index = 0;
   for(auto i = particles.begin(); i != particles.end(); ++i){
     (*i).density = density_buffer[index];
+    ++index;
+  }
+
+  //update pressure
+  index = 0;
+  for(auto i = particles.begin(); i != particles.end(); ++i){
+    //update each particle
+    particle& p = *i;
+    pressure_buffer[index] = calculate_particle_pressure(p);
+    ++index;
+  }
+
+  index = 0;
+  for(auto i = particles.begin(); i != particles.end(); ++i){
     (*i).pressure = pressure_buffer[index];
     ++index;
   }
 
+  //calculate pressure acceleration
   for(auto i = particles.begin(); i != particles.end(); ++i){
     particle* p = &(*i);
     vec2f old_pos = p->position;
@@ -148,7 +162,7 @@ float scene::calculate_particle_mass(particle& P){
     new_mass += P.mass_from(b);
   }
 
-  //std::cout << new_mass << " " << adjacents.size() << std::endl;
+  std::cout << new_mass << " " << adjacents.size() << std::endl;
   return new_mass;
 }
 
@@ -184,10 +198,11 @@ void scene::update_particle_acceleration(particle& P){
     pressure_gradient += press;
   }
 
-  std::cout << "list size: " << adjacents.size() << std::endl;
+  //std::cout << "list size: " << adjacents.size() << std::endl;
   //std::cout << pressure_gradient << std::endl;
 
-  P.force = pressure_gradient * P.density;
+  P.force = -pressure_gradient * P.density;
+  P.force = viscosity_damping(P);
   P.force += force_damping(P);
   P.force += force_ext(P);
 
@@ -216,6 +231,10 @@ vec2f scene::force_ext(particle& P){
 
 vec2f scene::force_damping(particle& P){
   return -motion_damping * P.velocity;
+}
+
+vec2f scene::viscosity_damping(particle& P){
+  return vec2f{0,0};
 }
 
 
@@ -265,7 +284,7 @@ void scene::run(void){
 
   //generate some particles before running
   //add_particle(-1, 0);
-  int resolution = 4;
+  int resolution = 2;
   for( int i = -resolution; i < resolution - 1; ++i ){
     for( int j = -resolution; j < resolution - 1; ++j){
       float x = (i+1) * (width)/(resolution*2);
