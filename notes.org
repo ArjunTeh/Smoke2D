@@ -4,6 +4,8 @@
 * Notes about the simulation
   per grid, there should generally be only one particle per grid at the rest state
   they should be pushing away from each other, so why do they clump?
+** Using the Monte Carlo summation
+   Should we be counting yourself when calculating density?
 
 ** Clustering
    Clumping is a common bug that most people have, that has to do with the choice of kernel, the piecewise function should deal with it
@@ -21,4 +23,4 @@
 ** Viscosity should be added
 
 ** Influence circle
-   there seems to be a problem with particles being affected by particles to the side of it
+   there seems to be a problem with particles being affected by particles to the side of it (perhaps the viscosity term will help)

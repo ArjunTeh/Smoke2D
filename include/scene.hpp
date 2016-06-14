@@ -54,7 +54,6 @@ public:
   void update_particle_acceleration(particle& P);
   vec2f force_ext(particle& P);
   vec2f force_damping(particle& P);
-  vec2f viscosity_damping(particle& P);
   void draw();
   void run();
 

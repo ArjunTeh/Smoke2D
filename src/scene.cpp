@@ -193,16 +193,19 @@ void scene::update_particle_acceleration(particle& P){
   list<particle*> adjacents;
   grid.get_adjacent(P, adjacents);
   vec2f pressure_gradient{0,0};
+  vec2f viscosity_damping{0,0};
   for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
     vec2f press = P.acceleration_from(*i);
+    vec2f visc = P.viscosity_from(*i);
     pressure_gradient += press;
+    viscosity_damping += visc;
   }
 
   //std::cout << "list size: " << adjacents.size() << std::endl;
   //std::cout << pressure_gradient << std::endl;
 
   P.force = -pressure_gradient * P.density;
-  P.force = viscosity_damping(P);
+  P.force += viscosity_damping;
   P.force += force_damping(P);
   P.force += force_ext(P);
 
@@ -232,11 +235,6 @@ vec2f scene::force_ext(particle& P){
 vec2f scene::force_damping(particle& P){
   return -motion_damping * P.velocity;
 }
-
-vec2f scene::viscosity_damping(particle& P){
-  return vec2f{0,0};
-}
-
 
 void scene::draw(){
   //draw everything to screen

@@ -12,6 +12,7 @@ public:
   static constexpr float diff_const = 0.0001; //definitely can be smaller
   static constexpr float target_density = 0.03;
   static constexpr float pressure_stiffness = 20;
+  static constexpr float viscosity_factor = 10;
 
   vec2f position;
   vec2f velocity;
@@ -88,19 +89,23 @@ public:
     return -dir*work;
   }
 
-  vec2f acceleration_from( particle* p ){
-    if( p == this || !p ){ return vec2f{0,0}; }
-    if(density < 1e-8) {
-      std::cout << "density lower than zero" << std::endl;
-      return vec2f{ 0.0 };
-    }
+  float kernel_laplacian( particle* p ){
+    //we are using the five-point stencil here
+    float numerator = 0;
+    float x = p->position.x;
+    float y = p->position.y;
+    //f(x+h, y)
+    numerator += kernel_function( vec2f{ x + diff_const, y } );
+    //f(x-h, y)
+    numerator += kernel_function( vec2f{ x - diff_const, y } );
+    //f(x, y+h)
+    numerator += kernel_function( vec2f{ x, y + diff_const } );
+    //f(x, y-h)
+    numerator += kernel_function( vec2f{ x, y - diff_const } );
+    //4 * f(x ,y)
+    numerator -= 4 * kernel_function( vec2f{ x, y } );
 
-    //density needs a calculation, then pressure does as well
-    float factor = pressure/(density*density);
-    factor += p->pressure/(p->density*p->density);
-    factor *= p->mass;
-
-    return factor * kernel_gradient(p);
+    return numerator / (diff_const*diff_const);
   }
 
   float density_from( particle const* p) const {
@@ -120,6 +125,29 @@ public:
 
   float update_pressure(void){
     return pressure_stiffness * ( density - target_density );
+  }
+
+
+  vec2f acceleration_from( particle* p ){
+    if( p == this || !p ){ return vec2f{0,0}; }
+    if(density < 1e-8) {
+      std::cout << "density lower than zero" << std::endl;
+      return vec2f{ 0.0 };
+    }
+
+    //density needs a calculation, then pressure does as well
+    float factor = pressure/(density*density);
+    factor += p->pressure/(p->density*p->density);
+    factor *= p->mass;
+
+    return factor * kernel_gradient(p);
+  }
+
+  vec2f viscosity_from( particle* p ){
+    if(p == this || !p ){ return vec2f{0,0}; }
+    float factor = viscosity_factor * p->mass / p->density;
+    vec2f relative_vel = p->velocity - velocity;
+    return factor * kernel_laplacian(p) * relative_vel;
   }
 
 
