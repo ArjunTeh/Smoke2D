@@ -9,10 +9,10 @@
 class particle {
 public:
   static constexpr float sphere_of_influence = Constants::h_val;//2 units of influence
-  static constexpr float diff_const = 0.0001; //definitely can be smaller
+  static constexpr float diff_const = 0.0004; //definitely can be smaller
   static constexpr float target_density = 0.03;
-  static constexpr float pressure_stiffness = 20;
-  static constexpr float viscosity_factor = 10;
+  static constexpr float pressure_stiffness = 300;
+  static constexpr float viscosity_factor = 0.5;
 
   vec2f position;
   vec2f velocity;
@@ -109,7 +109,7 @@ public:
   }
 
   float density_from( particle const* p) const {
-    if( !p ) { return 0.0f; }
+    //if( !p ) { return 0.0f; }
     return p->mass * kernel_function(p->position);
   }
 
@@ -119,11 +119,11 @@ public:
   }
 
   float pressure_from( particle const* p) const {
-    if( !p || p == this ) { return 0.0f; }
-    return p->mass * kernel_function(p->position) * p->pressure / p->density;
+    //if( !p || p == this ) { return 0.0f; }
+    return p->mass * kernel_function(p->position) * p->pressure * pressure/ (2*p->density);
   }
 
-  float update_pressure(void){
+  float update_pressure(void){ //negative pressure is a thing
     return pressure_stiffness * ( density - target_density );
   }
 
@@ -134,13 +134,19 @@ public:
       std::cout << "density lower than zero" << std::endl;
       return vec2f{ 0.0 };
     }
-
+    /*
     //density needs a calculation, then pressure does as well
     float factor = pressure/(density*density);
     factor += p->pressure/(p->density*p->density);
     factor *= p->mass;
 
-    return factor * kernel_gradient(p);
+    return factor * kernel_gradient(p) * density;
+    */
+    float factor2 = pressure * p->pressure;
+    factor2 /= (p->density * p->density);
+    factor2 += 1;
+
+    return factor2 * kernel_gradient(p);
   }
 
   vec2f viscosity_from( particle* p ){

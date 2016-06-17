@@ -18,6 +18,7 @@
    Right now, for some reason, energy is being added into the system per collision?
    Perhaps that has to do with the pressure equation?
    recalculating mass probably needs to happen as well
+   [[https://github.com/rlguy/SPHFluidSim/blob/master/src/sphfluidsimulation.cpp][this guy]] chose to limit the maximum acceleration that could occur
 ** Constant Mass
    In order for mass to be conserved in the simulation, we don't mess with the mass of each particle
 ** Viscosity should be added

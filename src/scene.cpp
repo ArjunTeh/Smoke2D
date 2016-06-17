@@ -204,7 +204,7 @@ void scene::update_particle_acceleration(particle& P){
   //std::cout << "list size: " << adjacents.size() << std::endl;
   //std::cout << pressure_gradient << std::endl;
 
-  P.force = -pressure_gradient * P.density;
+  P.force = pressure_gradient;
   P.force += viscosity_damping;
   P.force += force_damping(P);
   P.force += force_ext(P);
@@ -282,7 +282,7 @@ void scene::run(void){
 
   //generate some particles before running
   //add_particle(-1, 0);
-  int resolution = 2;
+  int resolution = Constants::particle_res;
   for( int i = -resolution; i < resolution - 1; ++i ){
     for( int j = -resolution; j < resolution - 1; ++j){
       float x = (i+1) * (width)/(resolution*2);
@@ -293,7 +293,6 @@ void scene::run(void){
 
   while(!glfwWindowShouldClose(window) && !should_abort) {
     auto t_now = std::chrono::high_resolution_clock::now();
-
 
     float t_delta = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_prev).count();
     if( t_delta > float(1/FPS)){

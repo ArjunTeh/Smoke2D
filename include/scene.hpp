@@ -20,7 +20,7 @@ class scene {
   static constexpr int max_particles = 500;
   static constexpr float motion_damping = 0.1;
   static constexpr float penalty_force = 100.0;
-  static constexpr float grid_block_size = 100; //Constants::h_val;
+  static constexpr float grid_block_size = Constants::h_val;
   static constexpr float scene_size = 5.0;
 
   GLFWwindow* window;
