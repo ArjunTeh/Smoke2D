@@ -88,10 +88,21 @@ void scene::init(void){
   // Get the location of the color uniform
   unicolor = glGetUniformLocation(shader_program, "color");
 
+  glGenVertexArrays(1, &border_vao);
+  glBindVertexArray(border_vao);
+  glGenBuffers(1, &border);
+  glBindBuffer(GL_ARRAY_BUFFER, border);
   //Finished OpenGL initialization
 
   density_buffer = new float[max_particles];
   pressure_buffer = new float[max_particles];
+
+  //init border buffer
+  float border_buffer[] = { -width, height,
+                            -width, -height,
+                            width, -height,
+                            width, height };
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*sizeof(border_buffer), border_buffer, GL_STATIC_DRAW);
 
 }
 
@@ -107,7 +118,7 @@ void scene::update(float t){
 
   index = 0;
   for(auto i = particles.begin(); i != particles.end(); ++i){
-    (*i).density = density_buffer[index];
+    (*i).density = density_buffer[index]/2;
     ++index;
   }
 
@@ -122,7 +133,7 @@ void scene::update(float t){
 
   index = 0;
   for(auto i = particles.begin(); i != particles.end(); ++i){
-    (*i).pressure = pressure_buffer[index];
+    (*i).pressure = pressure_buffer[index]/2;
     ++index;
   }
 
@@ -141,7 +152,7 @@ void scene::update(float t){
 float scene::calculate_particle_density(particle& P){
   list<particle*> adjacents;
   grid.get_adjacent(P, adjacents);
-  float new_density = 0.0;
+  float new_density = Constants::target_density;
 
   for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
     particle const* b = (*i);
@@ -150,20 +161,6 @@ float scene::calculate_particle_density(particle& P){
 
   //std::cout << new_density << " " << adjacents.size() << std::endl;
   return new_density;
-}
-
-float scene::calculate_particle_mass(particle& P){
-  list<particle*> adjacents;
-  grid.get_adjacent(P, adjacents);
-  float new_mass = 0.0;
-
-  for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
-    particle const* b = (*i);
-    new_mass += P.mass_from(b);
-  }
-
-  std::cout << new_mass << " " << adjacents.size() << std::endl;
-  return new_mass;
 }
 
 float scene::calculate_particle_pressure(particle& P){
@@ -177,11 +174,11 @@ float scene::calculate_particle_pressure(particle& P){
     new_pressure += P.pressure_from(b);
   }
 
-  std::cout << new_pressure << " " << adjacents.size() << std::endl;
+  //std::cout << new_pressure << " " << adjacents.size() << std::endl;
   return new_pressure;
   */
   float toreturn = P.update_pressure();
-  //std::cout << toreturn << std::endl;
+  std::cout << toreturn << std::endl;
   return toreturn;
 }
 
@@ -195,10 +192,8 @@ void scene::update_particle_acceleration(particle& P){
   vec2f pressure_gradient{0,0};
   vec2f viscosity_damping{0,0};
   for(auto i = adjacents.begin(); i != adjacents.end(); ++i){
-    vec2f press = P.acceleration_from(*i);
-    vec2f visc = P.viscosity_from(*i);
-    pressure_gradient += press;
-    viscosity_damping += visc;
+    pressure_gradient += P.acceleration_from(*i);
+    viscosity_damping += P.viscosity_from(*i);
   }
 
   //std::cout << "list size: " << adjacents.size() << std::endl;
@@ -257,6 +252,11 @@ void scene::draw(){
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vertices.size(), vertices.data(), GL_STREAM_DRAW);
   glDrawArrays(GL_POINTS, 0, particles.size());
 
+  glBindVertexArray(border_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, border);
+  glUniform3f(unicolor, 1.0f, 0.0f, 1.0f);
+  glDrawArrays(GL_LINES, 0, 8);
+
   //std::cout << " vertices" << std::endl;
   /*
   for( auto i = vertices.begin(); i != vertices.end(); ++i ){
@@ -285,9 +285,9 @@ void scene::run(void){
   int resolution = Constants::particle_res;
   for( int i = -resolution; i < resolution - 1; ++i ){
     for( int j = -resolution; j < resolution - 1; ++j){
-      float x = (i+1) * (width)/(resolution*2);
-      float y = (j+1) * (height)/(resolution*2);
-      add_particle(x,y);
+      float x = (i+1) * (width)/(resolution*1.5);
+      float y = (j+1) * (height)/(resolution*1.5);
+      add_particle(x,y - (height/2));
     }
   }
 

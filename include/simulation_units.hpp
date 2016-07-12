@@ -9,10 +9,10 @@
 class particle {
 public:
   static constexpr float sphere_of_influence = Constants::h_val;//2 units of influence
-  static constexpr float diff_const = 0.0004; //definitely can be smaller
-  static constexpr float target_density = 0.03;
-  static constexpr float pressure_stiffness = 300;
-  static constexpr float viscosity_factor = 0.5;
+  static constexpr float diff_const = Constants::diff_const; //definitely can be smaller
+  static constexpr float target_density = Constants::target_density;
+  static constexpr float pressure_stiffness = Constants::pressure_stiffness;
+  static constexpr float viscosity_factor = Constants::viscosity_factor;
 
   vec2f position;
   vec2f velocity;
@@ -47,6 +47,14 @@ public:
     float b = 1- q;
 
     return a * b*b*b;
+  }
+
+  float kernel_spiky( vec2f const p ) const{
+    float q = -(position - p).length2();
+    static const float h2 = sphere_of_influence * sphere_of_influence;
+    if( q < h2 ){ return 0; }
+    q += sphere_of_influence * sphere_of_influence;
+    return q*q*q;
   }
 
   vec2f kernel_gradient( particle* p ){
@@ -89,6 +97,31 @@ public:
     return -dir*work;
   }
 
+  vec2f kernel_gradient_spiky( particle* p ){
+    vec2f xy = p->position;
+
+    vec2f pre_x = xy;
+    pre_x.x -= diff_const/2;
+    float pre_x_val = kernel_spiky( pre_x );
+    vec2f post_x = xy;
+    post_x.x += diff_const/2;
+    float post_x_val = kernel_spiky( post_x );
+
+    vec2f pre_y = xy;
+    pre_y.y -= diff_const/2;
+    float pre_y_val = kernel_spiky( pre_y );
+    vec2f post_y = xy;
+    post_y.y += diff_const/2;
+    float post_y_val = kernel_spiky( post_y );
+
+    float grad_x = (post_x_val - pre_x_val) / diff_const;
+    float grad_y = (post_y_val - pre_y_val) / diff_const;
+
+    return vec2f{grad_x, grad_y};
+
+  }
+
+
   float kernel_laplacian( particle* p ){
     //we are using the five-point stencil here
     float numerator = 0;
@@ -113,14 +146,9 @@ public:
     return p->mass * kernel_function(p->position);
   }
 
-  float mass_from( particle const* p) const {
-    if( !p ) { return 0.0f; }
-    return (p->mass/p->density) * kernel_function(p->position);
-  }
-
   float pressure_from( particle const* p) const {
     //if( !p || p == this ) { return 0.0f; }
-    return p->mass * kernel_function(p->position) * p->pressure * pressure/ (2*p->density);
+    return p->mass * kernel_spiky(p->position) * p->pressure * pressure/ (2*p->density);
   }
 
   float update_pressure(void){ //negative pressure is a thing
@@ -142,11 +170,10 @@ public:
 
     return factor * kernel_gradient(p) * density;
     */
-    float factor2 = pressure * p->pressure;
-    factor2 /= (p->density * p->density);
-    factor2 += 1;
+    float factor2 = pressure + p->pressure;
+    factor2 /= (2 * p->density);
 
-    return factor2 * kernel_gradient(p);
+    return factor2 * kernel_gradient_spiky(p);
   }
 
   vec2f viscosity_from( particle* p ){

@@ -37,6 +37,10 @@ public:
     return sqrt(x*x + y*y);
   }
 
+  T length2(void){
+    return x*x + y*y;
+  }
+
   vec2<T> normalize(void){
     return (*this)/(this->length());
   }
