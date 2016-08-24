@@ -8,7 +8,7 @@
 
 class particle {
 public:
-  static constexpr float sphere_of_influence = Constants::h_val;//2 units of influence
+  static constexpr float h_val = Constants::h_val;//2 units of influence
   static constexpr float diff_const = Constants::diff_const; //definitely can be smaller
   static constexpr float target_density = Constants::target_density;
   static constexpr float pressure_stiffness = Constants::pressure_stiffness;
@@ -21,83 +21,23 @@ public:
   float pressure = 1.0;
   float density = 0.3;
 
-  float kernel_function( vec2f const p ) const {
-    return kernel_function1(p);
-    //return kernel_function2(p);
+  float kernel_poly6( vec2f const p ) const {
+    vec2f r = p - position;
+    if(r.length() > h_val || r.length() < 0){
+      return 0.0f;
+    }
+    return pow( h_val*h_val - r.length2() , 3 );
   }
 
-  float kernel_function1( vec2f const p ) const {
-    float q = (position - p).length();
-    q /= sphere_of_influence;
-    if( q < 0) { std::cout<< "we fucked up" << std::endl; }
-
-    if( q > 2 ) { return 0.0f; }
-    float work = (2 - q) * (2 - q) * (2 - q);
-    if(q > 1) { return work; }
-    work -= 4 * pow( (1-q) , 3 );
-
-    return work;
-  };
-
-  float kernel_function2( vec2f const p ) const{
-    float q = (position - p).length();
-    q /= sphere_of_influence;
-    if( q > 1 ) { return 0; }
-    float a = 1 + 3*q;
-    float b = 1- q;
-
-    return a * b*b*b;
+  float kernel_spiky (vec2f const p ) const {
+    vec2f r = p - position;
+    if(r.length() > h_val || r.length() < 0){
+      return 0.0f;
+    }
+    return pow( h_val - r.length() , 3 );
   }
 
-  float kernel_spiky( vec2f const p ) const{
-    float q = -(position - p).length2();
-    static const float h2 = sphere_of_influence * sphere_of_influence;
-    if( q < h2 ){ return 0; }
-    q += sphere_of_influence * sphere_of_influence;
-    return q*q*q;
-  }
-
-  vec2f kernel_gradient( particle* p ){
-    return kernel_gradient1(p);
-    //return kernel_gradient2(p);
-  }
-
-  vec2f kernel_gradient1( particle* p ){
-    vec2f xy = p->position;
-
-    vec2f pre_x = xy;
-    pre_x.x -= diff_const/2;
-    float pre_x_val = kernel_function( pre_x );
-    vec2f post_x = xy;
-    post_x.x += diff_const/2;
-    float post_x_val = kernel_function( post_x );
-
-    vec2f pre_y = xy;
-    pre_y.y -= diff_const/2;
-    float pre_y_val = kernel_function( pre_y );
-    vec2f post_y = xy;
-    post_y.y += diff_const/2;
-    float post_y_val = kernel_function( post_y );
-
-    float grad_x = (post_x_val - pre_x_val) / diff_const;
-    float grad_y = (post_y_val - pre_y_val) / diff_const;
-
-    return vec2f{grad_x, grad_y};
-
-  }
-
-  vec2f kernel_gradient2( particle* p ){
-    //use of derivative
-    vec2f dir = p->position - position;
-    //std::cout << "pos diff is: " << dir << std::endl;
-    float q = dir.length();
-    dir = dir.normalize();
-    q /= sphere_of_influence;
-    float work = -12*q*(1-q)*(1-q);
-    return -dir*work;
-  }
-
-  vec2f kernel_gradient_spiky( particle* p ){
+  vec2f kernel_gradient_diff( particle* p ){
     vec2f xy = p->position;
 
     vec2f pre_x = xy;
@@ -121,29 +61,40 @@ public:
 
   }
 
-
   float kernel_laplacian( particle* p ){
     //we are using the five-point stencil here
     float numerator = 0;
     float x = p->position.x;
     float y = p->position.y;
     //f(x+h, y)
-    numerator += kernel_function( vec2f{ x + diff_const, y } );
+    numerator += kernel_poly6( vec2f{ x + diff_const, y } );
     //f(x-h, y)
-    numerator += kernel_function( vec2f{ x - diff_const, y } );
+    numerator += kernel_poly6( vec2f{ x - diff_const, y } );
     //f(x, y+h)
-    numerator += kernel_function( vec2f{ x, y + diff_const } );
+    numerator += kernel_poly6( vec2f{ x, y + diff_const } );
     //f(x, y-h)
-    numerator += kernel_function( vec2f{ x, y - diff_const } );
+    numerator += kernel_poly6( vec2f{ x, y - diff_const } );
     //4 * f(x ,y)
-    numerator -= 4 * kernel_function( vec2f{ x, y } );
+    numerator -= 4 * kernel_poly6( vec2f{ x, y } );
 
     return numerator / (diff_const*diff_const);
   }
 
+  //works only with specific pieces
+  vec2f kernel_gradient_deriv( particle* p ){
+    //use of derivative
+    vec2f dir = p->position - position;
+    //std::cout << "pos diff is: " << dir << std::endl;
+    float q = dir.length();
+    dir = dir.normalize();
+    q /= h_val;
+    float work = -12*q*(1-q)*(1-q);
+    return -dir*work;
+  }
+
   float density_from( particle const* p) const {
     //if( !p ) { return 0.0f; }
-    return p->mass * kernel_function(p->position);
+    return p->mass * kernel_poly6(p->position);
   }
 
   float pressure_from( particle const* p) const {
@@ -173,7 +124,7 @@ public:
     float factor2 = pressure + p->pressure;
     factor2 /= (2 * p->density);
 
-    return factor2 * kernel_gradient_spiky(p);
+    return factor2 * kernel_gradient_diff(p);
   }
 
   vec2f viscosity_from( particle* p ){

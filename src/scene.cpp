@@ -285,8 +285,8 @@ void scene::run(void){
   int resolution = Constants::particle_res;
   for( int i = -resolution; i < resolution - 1; ++i ){
     for( int j = -resolution; j < resolution - 1; ++j){
-      float x = (i+1) * (width)/(resolution*1.5);
-      float y = (j+1) * (height)/(resolution*1.5);
+      float x = (i+1) * (width)/(resolution*1.2);
+      float y = (j+1) * (height)/(resolution*1.2);
       add_particle(x,y - (height/2));
     }
   }
