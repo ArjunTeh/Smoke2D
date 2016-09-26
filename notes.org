@@ -3,14 +3,12 @@
 * Notes about the simulation
   per grid, there should generally be only one particle per grid at the rest state
   they should be pushing away from each other, so why do they clump?
-** Using the Monte Carlo summation
-   Should we be counting yourself when calculating density? - yea that would make sense . . .
 
-** Clustering
+** Clustering - don't even get that yet
    Clumping is a common bug that most people have, that has to do with the choice of kernel, the piecewise function should deal with it
    Clustering is also solved by having two kernel functions that are used, with one being the near case? - It just means that the kernels are different for each measurement
 
-** Data structure
+** Data structure\
    Currently the hash being used right now doesn't correctly index the grid space to get the correct spaces
    Look into switching to openvdb <-- designed exactly for this kind of thing
    
@@ -19,7 +17,7 @@
    Perhaps that has to do with the pressure equation?
    recalculating mass probably needs to happen as well
    [[https://github.com/rlguy/SPHFluidSim/blob/master/src/sphfluidsimulation.cpp][this guy]] chose to limit the maximum acceleration that could occur
-   - K pressure should be a very large number, like 1e6 big
+   I AM DOING THIS AS WELL, NOT A GOOD IDEA AT ALL
 ** Constant Mass
    In order for mass to be conserved in the simulation, we don't mess with the mass of each particle
 ** Viscosity should be added

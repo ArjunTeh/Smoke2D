@@ -16,19 +16,19 @@ class scene {
 
   //ACTUAL STUFF
   static constexpr float FPS = 60.0;
-  static constexpr float time_step = 0.002;
+  static constexpr float time_step = 0.03;
   static constexpr int max_particles = 500;
   static constexpr float motion_damping = 0.1;
   static constexpr float penalty_force = 100.0;
   static constexpr float grid_block_size = 10; //Constants::h_val;
-  static constexpr float scene_size = 5.0;
+  static constexpr float scene_size = Constants::scene_bounds; //need to change this
 
   GLFWwindow* window;
 
   GLuint vbo, vao;
   GLuint vertex_shader, fragment_shader, shader_program;
   GLuint border, border_vao;
-  GLuint unicolor;
+  GLuint unicolor, unidimension;
   bool should_run;
   float width, height;
   float *density_buffer, *pressure_buffer;

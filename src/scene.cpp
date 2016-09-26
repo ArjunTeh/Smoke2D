@@ -8,9 +8,10 @@
 const GLchar* vertexSource =
   "#version 150 core\n"
   "in vec2 position;"
+  "uniform float dimensions;"
   "void main()"
   "{"
-  "    vec2 screen_pos = (position)/10.0;"
+  "    vec2 screen_pos = (position)/dimensions;"
   "    gl_Position = vec4(screen_pos, 0.0, 1.0);"
   "}";
 const GLchar* fragmentSource =
@@ -87,6 +88,7 @@ void scene::init(void){
 
   // Get the location of the color uniform
   unicolor = glGetUniformLocation(shader_program, "color");
+  unidimension = glGetUniformLocation(shader_program, "dimensions");
 
   glGenVertexArrays(1, &border_vao);
   glBindVertexArray(border_vao);
@@ -116,18 +118,18 @@ void scene::update(float t){
     ++index;
   }
 
-  index = 0;
-  for(auto i = particles.begin(); i != particles.end(); ++i){
-    (*i).density = density_buffer[index]/2;
-    ++index;
-  }
-
   //update pressure
   index = 0;
   for(auto i = particles.begin(); i != particles.end(); ++i){
     //update each particle
     particle& p = *i;
     pressure_buffer[index] = calculate_particle_pressure(p);
+    ++index;
+  }
+
+  index = 0;
+  for(auto i = particles.begin(); i != particles.end(); ++i){
+    (*i).density = density_buffer[index]/2;
     ++index;
   }
 
@@ -164,7 +166,7 @@ float scene::calculate_particle_density(particle& P){
 }
 
 float scene::calculate_particle_pressure(particle& P){
-  /*
+
   list<particle*> adjacents;
   grid.get_adjacent(P, adjacents);
   float new_pressure = 0.0; //minimum density? is this valid?
@@ -176,10 +178,10 @@ float scene::calculate_particle_pressure(particle& P){
 
   //std::cout << new_pressure << " " << adjacents.size() << std::endl;
   return new_pressure;
-  */
-  float toreturn = P.update_pressure();
-  std::cout << toreturn << std::endl;
-  return toreturn;
+
+  // float toreturn = P.pressure();
+  // std::cout << toreturn << std::endl;
+  // return toreturn;
 }
 
 void scene::update_particle_acceleration(particle& P){
@@ -203,6 +205,10 @@ void scene::update_particle_acceleration(particle& P){
   P.force += viscosity_damping;
   P.force += force_damping(P);
   P.force += force_ext(P);
+
+  if(P.force.length2() > Constants::max_force){
+    P.force = P.force.normalize() * Constants::max_force;
+  }
 
 }
 
@@ -247,6 +253,7 @@ void scene::draw(){
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
   glUniform3f(unicolor, 1.0f, 1.0f, 1.0f);
+  glUniform1f(unidimension, Constants::scene_bounds);
 
   glPointSize(5);
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vertices.size(), vertices.data(), GL_STREAM_DRAW);

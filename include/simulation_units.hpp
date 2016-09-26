@@ -17,8 +17,8 @@ public:
   vec2f position;
   vec2f velocity;
   vec2f force;
-  float mass = 0.5;
-  float pressure = 1.0;
+  float mass = 1.0;
+  float pressure = 0.0;
   float density = 0.3;
 
   float kernel_poly6( vec2f const p ) const {
@@ -83,12 +83,12 @@ public:
   //works only with specific pieces
   vec2f kernel_gradient_deriv( particle* p ){
     //use of derivative
-    vec2f dir = p->position - position;
+    vec2f dir = position - p->position;
     //std::cout << "pos diff is: " << dir << std::endl;
     float q = dir.length();
     dir = dir.normalize();
     q /= h_val;
-    float work = -12*q*(1-q)*(1-q);
+    float work = -6*q*(1-q*q)*(1-q*q);
     return -dir*work;
   }
 
@@ -124,7 +124,7 @@ public:
     float factor2 = pressure + p->pressure;
     factor2 /= (2 * p->density);
 
-    return factor2 * kernel_gradient_diff(p);
+    return factor2 * kernel_gradient_deriv(p);
   }
 
   vec2f viscosity_from( particle* p ){
