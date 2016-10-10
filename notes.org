@@ -24,3 +24,5 @@
 
 ** Influence circle
    there seems to be a problem with particles being affected by particles to the side of it (perhaps the viscosity term will help)
+
+Make some changes
